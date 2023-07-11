@@ -14,9 +14,25 @@ class EmbeddingCreator:
         openai.api_key = openai_api_key
 
     def list_models(self):
-        logging.info("Listing models")
+        logging.info("Listing models")        
         logging.info(openai.Engine.list())
         
+    def load_data(self):
+        logging.info("Loading data")
+        self.data = pd.read_json(self.datafile, orient="records")
+        logging.info("Data loaded")
+
+    def create_embedding(self):
+        print("Creating embedding")        
+        self.load_data()
+        for index,row in self.data.iterrows():
+            if "chunks" in row:
+                input = row["chunks"]
+            else:
+                input = row["content"]
+            response = openai.Embedding.create(model=self.embedding_model, input=input)
+            logging.info("got response")
+
 
     
-    
+     
