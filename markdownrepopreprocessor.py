@@ -47,39 +47,45 @@ class MarkdownRepoPreprocessor:
         chars_per_chunk = round(len(s) / n)
         return [s[i:i+chars_per_chunk] for i in range(0, len(s), chars_per_chunk)]
 
-    def split_into_n_chunks(self, string: str, max_tokens: int) -> list[str]:
-        total_tokens = self.num_tokens(string)
-        if total_tokens <= max_tokens:
-            return [string]
-        else:
-            paragraphs = string.split("\n")
-            chunk = ""
-            chunks = []
-            i = 0
-            max = len(paragraphs)
-            for paragraph in paragraphs:
-                i += 1
-                # if the paragraph itself is bigger than the max tokens, split it into chunks based only on equal split into n parts
-                if self.num_tokens(paragraph) > max_tokens:
-                    num_required_chunks = self.num_tokens(paragraph) / max_tokens
-                    num_required_chunks = int(num_required_chunks) if num_required_chunks.is_integer() else int(num_required_chunks) + 1
-                    paragraph_chunks = self.split_string_into_n_parts(paragraph, num_required_chunks)
-                    chunks.extend(paragraph_chunks)
-                # if the cumulative parapraph token size is still smaller than max tokens then keep adding to it
-                elif self.num_tokens(paragraph) + self.num_tokens(chunk) <= max_tokens:
-                    chunk += paragraph + "\n"
-                # if the cumulative paragraph token size is bigger than max tokens, squeeze it off here and start a new chunk
-                else:
-                    chunks.append(chunk)
-                    chunk = paragraph + "\n"
-                # if we're at the end of the paragraphs, squeeze off the last chunk if any is left
-                if i == max and chunk != "":
-                    chunks.append(chunk)
-            return chunks
+    # method to take a string and split it into n chunks of roughly equal size but the chunks should only be cut at newlines, not in the middle of words
+    def split_string(self, s, n, delimiter):
+        # Split string by newlines
+        lines = s.split(delimiter)
+
+        # Calculate size of each chunk
+        chunk_size = len(lines) // n
+        remainder = len(lines) % n
+
+        chunks = []
+        i = 0
+
+        # Distribute lines among chunks
+        for _ in range(n):
+            # Start with chunk_size lines for this chunk
+            end = i + chunk_size
+            # Distribute remainder among first few chunks
+            if remainder > 0:
+                end += 1
+                remainder -= 1
+            chunks.append('\n'.join(lines[i:end]))
+            i = end
+
+        return chunks
+
     
+    def standardize_length(self, max_tokens):
+        self._standardize_length(max_tokens, "\n")
+        # check if any element in self.files_detail has more than max_tokens
+        for file_detail in self.files_detail:
+            if file_detail["token-length"] > max_tokens:
+                self._standardize_length(max_tokens, "\n")
+                break
+        return self.files_detail
+        
+
    
 
-    def standardize_length(self, max_tokens):
+    def _standardize_length(self, max_tokens, delimiter="\n"):
         logging.info(f"Standardizing length to {max_tokens} tokens...")
         if len(self.files_detail) == 0:
             raise Exception("No files to standardize length of. Run preprocess_files_in_directory() first.")
@@ -93,13 +99,13 @@ class MarkdownRepoPreprocessor:
             num_tokens = file_detail["token-length"]
             if num_tokens > max_tokens:
                 # split into chunks
-                chunks = self.split_into_n_chunks(file_detail["content"], max_tokens)
+                required_chunks = round(num_tokens / max_tokens) + 1
+                chunks = self.split_string(file_detail["content"], required_chunks, delimiter)
                 for chunk in chunks:
                     new_file_detail = self.clone_file_detail(file_detail)
                     new_file_detail["content"] = chunk
                     new_file_detail["token-length"] = self.num_tokens(chunk)
                     new_files_detail.append(new_file_detail)
-                file_detail["chunks"] = chunks
                 filename = file_detail["filepath"]
                 num_tokens = file_detail["token-length"]
 
@@ -107,6 +113,9 @@ class MarkdownRepoPreprocessor:
             else:
                 new_files_detail.append(file_detail)
         self.files_detail = new_files_detail
+        
+        
+
         return self.files_detail
 
     def preprocess_files_in_directory(self):
