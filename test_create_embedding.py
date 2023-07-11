@@ -3,7 +3,7 @@ import create_embedding
 
 class TestCreateEmbedding(unittest.TestCase):
     def setUp(self) -> None:
-        api_key = "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"
+        api_key = ""
         self.embedding_creator = create_embedding.EmbeddingCreator("testdata\\preprocessor\\test.json", api_key)
 
     def test_list_models(self):
