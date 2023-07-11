@@ -14,8 +14,13 @@ class TestMarkdownRepoPreprocessor(unittest.TestCase):
         self.assertAlmostEqual(len(files), 2)
     def test_standardize_length(self):
         files = self.preprocessor.preprocess_files_in_directory()
+        self.assertEqual(len(files), 2)
+        self.assertEqual(files[0]["token-length"], 15697)
         files = self.preprocessor.standardize_length(8000)
-        self.assertEqual(len(files[0]["chunks"]), 2)
+        self.assertEqual(len(files), 3)
+        self.assertEqual(files[0]["token-length"], 7992)
+        self.assertEqual(files[1]["token-length"], 7706)
+        self.assertEqual(files[2]["token-length"], 1516)
     def test_write_to_pretty_json(self):
         files = self.preprocessor.preprocess_files_in_directory()
         files = self.preprocessor.standardize_length(8000)
