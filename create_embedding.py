@@ -3,6 +3,7 @@ import openai
 import logging
 import tiktoken
 import json
+import time
 
 class EmbeddingCreator:
     def __init__(self, datafile, openai_api_key) -> None:
@@ -44,12 +45,19 @@ class EmbeddingCreator:
         embeddings_list = {}
         first_in_batch_index = 0
         last_row_index = len(self.data) - 1
+        tokens_so_far = 0
         input = []
         for index,row in self.data.iterrows():
             title = row["title"]
             filename = row["filepath"]
             tokenlen = row["token-length"]
-            logging.info(f"{index} of {last_row_index} Creating content batch with content for title: {title} - {tokenlen} - {filename}")
+            tokens_so_far += tokenlen
+            if tokens_so_far > 900000:
+                # sleep for 1 minute to avoid hitting the 1000000 request per minute limit
+                logging.info("Sleeping for 1 minute to avoid hitting the 1000000 request per minute limit")
+                time.sleep(60)
+                tokens_so_far = 0
+            logging.info(f"{index} of {last_row_index} Creating content batch with content for title: {title} - {tokenlen} (total since last minute break {tokens_so_far}) - {filename}")
             input.append(row["content"])
             embeddings_list[index] = []
             if ((index + 1) % 100 == 0) or (index == last_row_index):
