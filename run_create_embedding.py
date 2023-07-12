@@ -5,7 +5,7 @@ import logging
 
 # get the directory path from the command line
 if len(sys.argv) != 3:
-    print("Usage: python run_create_embedding.py <directory> <openai-api-key>")
+    print("Usage: python run_create_embedding.py <filepath> <openai-api-key>")
     exit(1)
 
 logging.basicConfig(
