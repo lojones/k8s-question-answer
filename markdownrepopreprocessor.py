@@ -11,7 +11,7 @@ class MarkdownRepoPreprocessor:
         self.directory = directory
         self.files_detail = []
         self.tiktoken_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-        self.skip_files = [ "CONTRIBUTING.md", "LICENSE.md", "CODE_OF_CONDUCT.md", "SECURITY.md", "output\\website-main\\website-main\\content\\en\\docs\\reference\\instrumentation\\metrics.md"]
+        self.skip_files = [ "CONTRIBUTING.md", "LICENSE.md", "CODE_OF_CONDUCT.md", "SECURITY.md", "output\\website-main\\website-main\\content\\en\\docs\\reference\\instrumentation\\metrics.md", "all.md", "test.md"]
         self.chunk_max_tokens = 8000
         logging.basicConfig(
             level=logging.INFO, 
